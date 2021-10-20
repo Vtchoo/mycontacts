@@ -4,3 +4,8 @@ declare interface Repository<T> {
     // findOne(): Promise<T>
     findById(id: string | number): Promise<T | undefined>
 }
+
+declare interface QueryOptions<T> {
+    where?: Partial<T>
+    orderBy?: any
+}
