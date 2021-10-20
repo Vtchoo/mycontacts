@@ -1,33 +1,36 @@
-import { v4 as uuid } from 'uuid'
 import * as db from '../../database'
-
-let contacts: Contact[] = [
-    {
-        id: uuid(),
-        name: 'Victor',
-        email: 'victorlima.civ@gmail.com',
-        phone: '12345678900',
-        category_id: uuid()
-    }
-]
-
 
 class ContactsRepository { // implements Repository<Contact>{
 
     async findAll({ orderBy }: QueryOptions<Contact>) {
 
         const direction = orderBy?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC'
-        const rows = await db.query(`SELECT * FROM contacts ORDER BY name ${direction}`)
+        const rows = await db.query(`
+            SELECT c.*, cat.name AS category_name
+            FROM contacts c
+            LEFT JOIN categories cat ON cat.id = c.category_id
+            ORDER BY c.name ${direction}
+        `)
         return rows
     }
     
     async findById(id: string | number) {
-        const [row] = await db.query(`SELECT * FROM contacts WHERE id = $1`, [id])
+        const [row] = await db.query(`
+            SELECT c.*, cat.name AS category_name
+            FROM contacts c
+            LEFT JOIN categories cat ON cat.id = c.category_id
+            WHERE c.id = $1
+        `, [id])
         return row
     }
     
     async findByEmail(email: string) {
-        const [row] = await db.query(`SELECT * FROM contacts WHERE email = $1`, [email])
+        const [row] = await db.query(`
+            SELECT c.*, cat.name AS category_name
+            FROM contacts c
+            LEFT JOIN categories cat ON cat.id = c.category_id
+            WHERE c.email = $1
+        `, [email])
         return row
     }
 

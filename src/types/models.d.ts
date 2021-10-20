@@ -5,3 +5,8 @@ declare interface Contact {
     phone: string
     category_id: string
 }
+
+declare interface Category {
+    id: string
+    name: string
+}
