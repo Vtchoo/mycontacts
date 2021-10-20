@@ -1,42 +1,63 @@
-import { Request, response, Response } from 'express'
+import { Request, Response } from 'express'
 import ContactsRepository from '../repositories/ContactsRepository'
 
 class ContactController {
 
     async index(req: Request, res: Response) {
-        const contacts = await ContactsRepository.findAll()
-        res.json({ results: contacts })
+
+        const { orderBy } = req.query
+
+        try {
+            const contacts = await ContactsRepository.findAll({ orderBy })
+            return res.json({ results: contacts, count: contacts.length })
+        } catch (error) {
+            console.log(error)
+            return res.status(500).json({ error: 'Internal server error' })
+        }
     }
 
     async show(req: Request, res: Response) {
 
         const { id } = req.params
 
-        const contact = await ContactsRepository.findById(id)
-
-        if (!contact)
-            return res.status(404).json({ error: 'Contact not found' })
+        try {
+            const contact = await ContactsRepository.findById(id)
+    
+            if (!contact)
+                return res.status(404).json({ error: 'Contact not found' })
+                
+            return res.json(contact)
             
-        return res.json(contact)
+        } catch (error) {
+            console.log(error)
+            return res.status(500).json({ error: 'Internal server error' })
+        }
     }
     
     async store(req: Request, res: Response) {
         
         const { name, email, phone, category_id } = req.body
 
-        if (!name) 
+        if (!name)
             return res.status(400).json({ error: 'Name is required' })
             
+        try {
             const existingContact = await ContactsRepository.findByEmail(email)
+                
+            if (existingContact)
+                return res.status(409).json({ error: 'Contact already exists' })
             
-            if (existingContact) 
-            return res.status(409).json({ error: 'Contact already exists' })
-        
             const contact = await ContactsRepository.create({
-            name, email, phone, category_id
-        })
-
-        return res.json(contact)
+                name, email, phone, category_id
+            })
+    
+            return res.json(contact)
+            
+        } catch (error) {
+            console.log(error)
+            return res.status(500).json({ error: 'Internal server error' })
+        }
+        
 
     }
     
@@ -65,7 +86,7 @@ class ContactController {
             name, email, phone, category_id
         })
 
-        return response.json(newContact)
+        return res.json(newContact)
     }
 
     async delete(req: Request, res: Response) {

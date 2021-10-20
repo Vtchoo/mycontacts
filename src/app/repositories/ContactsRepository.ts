@@ -1,4 +1,5 @@
 import { v4 as uuid } from 'uuid'
+import * as db from '../../database'
 
 let contacts: Contact[] = [
     {
@@ -13,54 +14,57 @@ let contacts: Contact[] = [
 
 class ContactsRepository { // implements Repository<Contact>{
 
-    async find() {
-        return contacts
-    }
+    async findAll({ orderBy }: QueryOptions<Contact>) {
 
-    async findAll() {
-        return contacts
-    }
-
-    async findById(id: string | number) {
-        return contacts.find(contact => contact.id == id)
-    }
-
-    async findByEmail(email: string) {
-        return contacts.find(contact => contact.email == email)
-    }
-
-    async create(data: Partial<Contact>) {
-        const newContact: Contact = {
-            id: uuid(),
-            name: data.name || '',
-            email: data.email || '',
-            phone: data.phone || '',
-            category_id: data.category_id || ''
-        }
-        
-        contacts.push(newContact)
-        
-        return newContact
+        const direction = orderBy?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC'
+        const rows = await db.query(`SELECT * FROM contacts ORDER BY name ${direction}`)
+        return rows
     }
     
-    async update(id: string, data: Partial<Contact>) {
+    async findById(id: string | number) {
+        const [row] = await db.query(`SELECT * FROM contacts WHERE id = $1`, [id])
+        return row
+    }
+    
+    async findByEmail(email: string) {
+        const [row] = await db.query(`SELECT * FROM contacts WHERE email = $1`, [email])
+        return row
+    }
+
+    async create({
+        name, email, phone, category_id
+    }: Partial<Contact>) {
         
-        const newContact: Contact = {
-            id,
-            name: data.name || '',
-            email: data.email || '',
-            phone: data.phone || '',
-            category_id: data.category_id || ''
-        }
+        const [row] = await db.query(`
+            INSERT INTO contacts (name, email, phone, category_id)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *
+        `, [name, email, phone, category_id])
 
-        contacts = contacts.map(contact => contact.id === id ? newContact : contact)
+        return row
+    }
+    
+    async update(id: string, {
+        name, email, phone, category_id 
+    }: Partial<Contact>) {
+        
+        const [row] = await db.query(`
+            UPDATE contacts
+            SET name = $1, email = $2, phone = $3, category_id = $4
+            WHERE id = $5
+            RETURNING *
+        `, [name, email, phone, category_id, id])
 
-        return newContact
+        return row
     }
 
     async delete(id: string | number) {
-        contacts = contacts.filter(contact => contact.id != id)
-        return
+        const deleteOp = await db.query(`
+            DELETE FROM contacts
+            WHERE id = $1
+        `, [id])
+
+        return deleteOp
     }
 }
 
