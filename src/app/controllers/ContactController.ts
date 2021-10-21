@@ -7,31 +7,20 @@ class ContactController {
 
         const { orderBy } = req.query
 
-        try {
-            const contacts = await ContactsRepository.findAll({ orderBy })
-            return res.json({ results: contacts, count: contacts.length })
-        } catch (error) {
-            console.log(error)
-            return res.status(500).json({ error: 'Internal server error' })
-        }
+        const contacts = await ContactsRepository.findAll({ orderBy })
+        return res.json({ results: contacts, count: contacts.length })
     }
 
     async show(req: Request, res: Response) {
 
         const { id } = req.params
 
-        try {
-            const contact = await ContactsRepository.findById(id)
-    
-            if (!contact)
-                return res.status(404).json({ error: 'Contact not found' })
-                
-            return res.json(contact)
+        const contact = await ContactsRepository.findById(id)
+
+        if (!contact)
+            return res.status(404).json({ error: 'Contact not found' })
             
-        } catch (error) {
-            console.log(error)
-            return res.status(500).json({ error: 'Internal server error' })
-        }
+        return res.json(contact)
     }
     
     async store(req: Request, res: Response) {
@@ -41,24 +30,16 @@ class ContactController {
         if (!name)
             return res.status(400).json({ error: 'Name is required' })
             
-        try {
-            const existingContact = await ContactsRepository.findByEmail(email)
+        const existingContact = await ContactsRepository.findByEmail(email)
                 
-            if (existingContact)
-                return res.status(409).json({ error: 'Contact already exists' })
+        if (existingContact)
+            return res.status(409).json({ error: 'Contact already exists' })
             
-            const contact = await ContactsRepository.create({
-                name, email, phone, category_id
-            })
+        const contact = await ContactsRepository.create({
+            name, email, phone, category_id
+        })
     
-            return res.json(contact)
-            
-        } catch (error) {
-            console.log(error)
-            return res.status(500).json({ error: 'Internal server error' })
-        }
-        
-
+        return res.json(contact)
     }
     
     async update(req: Request, res: Response) {
